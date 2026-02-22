@@ -543,36 +543,14 @@ const ADMIN_PASSWORD = "oladoja2025"; // ← Change this to your preferred passw
 const WORKS = [
   {
     id: 1,
-    title: "On the Nature of Consciousness and Subjective Experience",
-    category: "phenomenology",
-    type: "Journal Article",
-    description: "An exploration of qualia and the hard problem of consciousness through a Husserlian lens, examining the limits of physicalist accounts.",
-    tags: ["consciousness", "qualia", "Husserl"],
+    title: "Complementary Dualism as a Foundation for African Democracy",
+    category: "political",
+    type: "Essay",
+    description: "This long essay explores the idea of Complementary Dualism as a foundation for African Democracy. By examining the principles of harmony, balance, and interconnectedness inherent in Complementary Dualism, this work argues that the indigenous African philosophical framework offers a unique and inclusive approach to the Democratic political system in Africa.",
+    tags: ["African Philosophy", "Sophie Oluwole", "Dualism", "Democracy", "Political Philosophy"],
     format: "PDF",
-    date: "2024-11-03",
-    link: "#" // ← Replace # with actual Google Drive link
-  },
-  {
-    id: 2,
-    title: "Kantian Ethics in the Age of Artificial Intelligence",
-    category: "ethics",
-    type: "Journal Article",
-    description: "Applying the categorical imperative to questions of AI moral agency, responsibility, and the duties of designers and users.",
-    tags: ["Kant", "AI ethics", "categorical imperative"],
-    format: "DOCX",
-    date: "2025-01-15",
-    link: "#" // ← Replace # with actual Google Drive link
-  },
-  {
-    id: 3,
-    title: "Introduction to Modal Logic — Week 4 Notes",
-    category: "logic",
-    type: "Lecture Notes",
-    description: "Covering possible worlds semantics, Kripke frames, and accessibility relations with worked examples.",
-    tags: ["modal logic", "Kripke", "possible worlds"],
-    format: "PDF",
-    date: "2025-02-01",
-    link: "#" // ← Replace # with actual Google Drive link
+    date: "2026-02-22",
+    link: "https://drive.google.com/file/d/1s_uFqHRemIi4dP06GyoR_juGQaajZVW4/view?usp=drivesdk"
   }
 ];
 
@@ -650,154 +628,4 @@ function renderWorks() {
       (w.tags || []).some(t => t.toLowerCase().includes(query));
     return matchCat && matchQ;
   });
-
-  document.getElementById("resultsLabel").textContent =
-    filtered.length + " work" + (filtered.length !== 1 ? "s" : "") + " found";
-
-  if (filtered.length === 0) {
-    grid.innerHTML = `<div class="empty">
-      <div class="empty-icon">◌</div>
-      <div class="empty-text">No works match your search or filter.</div>
-    </div>`;
-    return;
-  }
-
-  filtered.forEach((w, i) => {
-    const cat = CATEGORIES.find(c => c.id === w.category) || CATEGORIES[CATEGORIES.length - 1];
-    const card = document.createElement("div");
-    card.className = "work-card";
-    card.style.animationDelay = (i * 0.04) + "s";
-
-    const tags = (w.tags || []).slice(0, 3).map(t => `<span class="tag">${t}</span>`).join("");
-    const driveLink = convertDriveLink(w.link);
-
-    card.innerHTML = `
-      <div class="card-top">
-        <div class="badges">
-          <span class="badge badge-type">${w.type}</span>
-          <span class="badge badge-file">${w.format}</span>
-        </div>
-        <span class="card-date">${formatDate(w.date)}</span>
-      </div>
-      <div class="card-title">${w.title}</div>
-      ${w.description ? `<div class="card-desc">${w.description}</div>` : ""}
-      ${tags ? `<div class="card-tags">${tags}</div>` : ""}
-      <div class="card-footer">
-        <div class="card-cat">${cat.icon} ${cat.label}</div>
-        <a class="download-btn" href="${driveLink}" target="_blank" rel="noopener">↓ Download</a>
-      </div>
-    `;
-    grid.appendChild(card);
-  });
-}
-
-// Convert Google Drive share link to direct download link
-function convertDriveLink(url) {
-  if (!url || url === "#") return "#";
-  // handle /file/d/ID/view → direct download
-  const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
-  if (match) return `https://drive.google.com/uc?export=download&id=${match[1]}`;
-  return url;
-}
-
-function formatDate(str) {
-  if (!str) return "";
-  const d = new Date(str);
-  return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
-}
-
-// ══════════════════════════════════════════
-//  ADMIN FLOW
-// ══════════════════════════════════════════
-function openAdminFlow() {
-  if (isAdmin) {
-    openOverlay("adminOverlay");
-  } else {
-    document.getElementById("pwInput").value = "";
-    showMsg("pwMsg", "", "");
-    openOverlay("pwOverlay");
-    setTimeout(() => document.getElementById("pwInput").focus(), 200);
-  }
-}
-
-function checkPassword() {
-  const val = document.getElementById("pwInput").value;
-  if (val === ADMIN_PASSWORD) {
-    isAdmin = true;
-    closeOverlay("pwOverlay");
-    document.getElementById("adminToggle").classList.add("active");
-    clearAdminForm();
-    openOverlay("adminOverlay");
-  } else {
-    showMsg("pwMsg", "Incorrect password. Please try again.", "error");
-    document.getElementById("pwInput").value = "";
-    document.getElementById("pwInput").focus();
-  }
-}
-
-function logoutAdmin() {
-  isAdmin = false;
-  document.getElementById("adminToggle").classList.remove("active");
-}
-
-function addWork() {
-  const title = document.getElementById("f_title").value.trim();
-  const cat   = document.getElementById("f_cat").value;
-  const type  = document.getElementById("f_type").value;
-  const desc  = document.getElementById("f_desc").value.trim();
-  const tags  = document.getElementById("f_tags").value.split(",").map(t => t.trim()).filter(Boolean);
-  const link  = document.getElementById("f_link").value.trim();
-  const fmt   = document.getElementById("f_format").value;
-
-  if (!title) { showMsg("adminMsg", "Please enter a title.", "error"); return; }
-  if (!link)  { showMsg("adminMsg", "Please paste the Google Drive link.", "error"); return; }
-
-  const newWork = {
-    id: Date.now(),
-    title, category: cat, type, description: desc,
-    tags, format: fmt, date: new Date().toISOString().slice(0,10), link
-  };
-
-  localWorks.unshift(newWork);
-  updateStats();
-  renderWorks();
-  showMsg("adminMsg", "✓ Work archived successfully!", "success");
-  setTimeout(() => {
-    closeOverlay("adminOverlay");
-    logoutAdmin();
-    clearAdminForm();
-  }, 1600);
-}
-
-function clearAdminForm() {
-  ["f_title","f_desc","f_tags","f_link"].forEach(id => document.getElementById(id).value = "");
-  document.getElementById("f_cat").selectedIndex = 0;
-  document.getElementById("f_type").selectedIndex = 0;
-  document.getElementById("f_format").selectedIndex = 0;
-  showMsg("adminMsg","","");
-}
-
-// ══════════════════════════════════════════
-//  HELPERS
-// ══════════════════════════════════════════
-function openOverlay(id) { document.getElementById(id).classList.add("open"); }
-function closeOverlay(id) { document.getElementById(id).classList.remove("open"); }
-
-function showMsg(id, text, type) {
-  const el = document.getElementById(id);
-  el.textContent = text;
-  el.className = "msg" + (type ? " " + type : "");
-}
-
-// Close overlay on backdrop click
-document.querySelectorAll(".overlay").forEach(ov => {
-  ov.addEventListener("click", e => {
-    if (e.target === ov) {
-      ov.classList.remove("open");
-      if (ov.id === "adminOverlay") logoutAdmin();
-    }
-  });
-});
-</script>
-</body>
-</html>
+ 
