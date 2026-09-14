@@ -635,6 +635,26 @@
   </div>
 </div>
 
+<!-- Firebase (compat build — works with plain scripts, no build tools needed) -->
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore-compat.js"></script>
+
+<script>
+// ══════════════════════════════════════════
+//  FIREBASE — permanent storage for new entries
+// ══════════════════════════════════════════
+const firebaseConfig = {
+  apiKey: "AIzaSyAGz9sB-SBAX8otS1yMarepbQzNaSGkp6w",
+  authDomain: "oladoja-philosophy.firebaseapp.com",
+  projectId: "oladoja-philosophy",
+  storageBucket: "oladoja-philosophy.firebasestorage.app",
+  messagingSenderId: "771932576421",
+  appId: "1:771932576421:web:6812128d98d230c5468b4c"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+</script>
+
 <script>
 // ══════════════════════════════════════════
 //  CONFIGURATION — change password here
@@ -749,7 +769,7 @@ const CATEGORIES = [
 // ══════════════════════════════════════════
 let activeCategory = "all";
 let isAdmin = false;
-let localWorks = [...WORKS]; // runtime additions go here
+let localWorks = [...WORKS]; // starts with the 7 built-in works; Firestore entries are added on load
 
 // ══════════════════════════════════════════
 //  INIT
@@ -758,7 +778,23 @@ document.addEventListener("DOMContentLoaded", () => {
   buildCatPills();
   renderWorks();
   updateStats();
+  loadSavedWorks();
 });
+
+// Pull every entry ever added through the admin panel from Firestore
+// and merge it with the built-in 7, newest first.
+function loadSavedWorks() {
+  db.collection("works").orderBy("addedAt", "desc").get()
+    .then(snapshot => {
+      const savedWorks = snapshot.docs.map(doc => doc.data());
+      localWorks = [...savedWorks, ...WORKS];
+      updateStats();
+      renderWorks();
+    })
+    .catch(err => {
+      console.error("Could not load saved works:", err);
+    });
+}
 
 function buildCatPills() {
   const container = document.getElementById("catPills");
@@ -906,18 +942,30 @@ function addWork() {
   const newWork = {
     id: Date.now(),
     title, category: cat, type, description: desc,
-    tags, format: fmt, date: new Date().toISOString().slice(0,10), link
+    tags, format: fmt, date: new Date().toISOString().slice(0,10), link,
+    addedAt: firebase.firestore.FieldValue.serverTimestamp()
   };
 
-  localWorks.unshift(newWork);
-  updateStats();
-  renderWorks();
-  showMsg("adminMsg", "✓ Work archived successfully!", "success");
-  setTimeout(() => {
-    closeOverlay("adminOverlay");
-    logoutAdmin();
-    clearAdminForm();
-  }, 1600);
+  const saveBtn = document.querySelector('#adminOverlay .submit-btn');
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = "Saving…"; }
+
+  db.collection("works").add(newWork)
+    .then(() => {
+      showMsg("adminMsg", "✓ Work archived successfully!", "success");
+      loadSavedWorks(); // refresh the list from the database
+      setTimeout(() => {
+        closeOverlay("adminOverlay");
+        logoutAdmin();
+        clearAdminForm();
+      }, 1600);
+    })
+    .catch(err => {
+      console.error("Save failed:", err);
+      showMsg("adminMsg", "✗ Could not save — check your connection and try again.", "error");
+    })
+    .finally(() => {
+      if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = "Archive This Work"; }
+    });
 }
 
 function clearAdminForm() {
